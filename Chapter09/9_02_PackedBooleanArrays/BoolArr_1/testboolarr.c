@@ -41,7 +41,7 @@ int main(void)
    assert(boolarr_set(ba, 191, true));
    assert(boolarr_set(ba, 194, true));
 
-   assert(boolarr_print(ba));
+   // assert(boolarr_print(ba));
 
    assert(boolarr_get(ba,0,&b));
    assert(b);

@@ -6,252 +6,259 @@ boolarr* boolarr_init(void)
 {
     boolarr* ba = (boolarr*) ncalloc(1, sizeof(boolarr));
     ba->a = (boolarrtype*) ncalloc(FIXEDSIZE, sizeof(boolarrtype));
-    ba->size = 0;
+    ba->n_bits = 0;
     ba->capacity = FIXEDSIZE;
     return ba;
+}
+
+int _stridx2bitidx(int stridx)
+{
+    int bit_idx = stridx % NBITS;
+    return bit_idx;
+}
+
+int _stridx2byteidx(int stridx)
+{
+    int byteidx = stridx / NBITS;
+    return byteidx;
+}
+
+int _bitidx2stridx(int byteidx, int bitidx)
+{
+    int stridx = byteidx * NBITS + bitidx;
+    return stridx;
 }
 
 /* Create boolarr based on string e.g. "1100001" */
 boolarr* boolarr_initstr(const char* str)
 {
-    boolarr* ba = boolarr_init(void);
-
-    int length = strlen(str);
-    for (int i=length-1; i>=0; i--){
-        int target = 0;
-        int byte_idx = (length -1 - i) / 8;
-        if (str[i] == '1'){
-            target += pow(BASE2, i);
-        }
-        ba = 
-    }
-
-    int n_bytes = (length / 8 + 1);
+    boolarr* ba = boolarr_init();
+    int n_bits = strlen(str);
+    int n_bytes = (n_bits / NBITS + 1);
     while (ba->capacity < n_bytes){
-        nrecalloc(ba->a, ba->capacity, ba->capacity*SCALEFACTOR*sizeof(boolarrtype));
+        ba->a = (boolarrtype*) nrecalloc(ba->a, ba->capacity, ba->capacity*SCALEFACTOR*sizeof(boolarrtype));
+        ba->capacity = ba->capacity*SCALEFACTOR*sizeof(boolarrtype);
     }
 
-    for (int i=n_bytes-1; i>=0; i--){
-        ba->a[i] = 
-        target 
-
+    // LSB is the first bit
+    for (int i=0; i<n_bits; i++){
+        if (str[n_bits-1-i] == '1'){
+            int bit_idx = _stridx2bitidx(i);
+            int byte_idx = _stridx2byteidx(i);
+            ba->a[byte_idx] += pow(BASE2, bit_idx);
+        }
     }
-    
 
-
-
-    target
-
-
-
-    // boolarr* ba = boolarr_init();
-    // int length = strlen(str);
-    // memcpy(ba->a, (boolarrtype*) str, length);
-    // ba->size = length;
-    // ba->capacity = FIXEDSIZE;
+    ba->n_bits = n_bits;
     return ba;
 }
 
-// /* Return a deep copy */
-// boolarr* boolarr_clone(const boolarr* ba)
-// {
-//     boolarr* ba_new = (boolarr*) ncalloc(1, sizeof(boolarr));
-//     ba_new->a = (boolarrtype*) nrecalloc(ba_new->a, ba_new->capacity, ba->capacity);
-//     memset(ba_new->a, '0', ba_new->capacity);
-//     ba_new->size = ba->size;
-//     ba_new->capacity = ba->size;
-//     memcpy(ba_new->a, (boolarrtype*) ba->a, (int)ba_new->capacity);
-//     return ba_new;
-// }
+/* Return a deep copy */
+boolarr* boolarr_clone(const boolarr* ba)
+{
+    boolarr* ba_new = boolarr_init();
+    ba_new->a = (boolarrtype*) nrecalloc(ba_new->a, ba_new->capacity, ba->capacity);
+    ba_new->n_bits = ba->n_bits;
+    ba_new->capacity = ba->capacity;
+    memcpy(ba_new->a,  ba->a, ba_new->capacity);
+    return ba_new;
+}
 
-// /* Get number of bits in array */
-// unsigned int boolarr_size(const boolarr* ba)
-// {
-//     if(ba==NULL){
-//         return 0;
-//     }
-//     return ba->size;
-// }
+/* Get number of bits in array */
+unsigned int boolarr_size(const boolarr* ba)
+{
+    if(ba==NULL){
+        return 0;
+    }
+    return ba->n_bits;
+}
 
-// /* Return number of bits that are set true */
-// unsigned int boolarr_count1s(const boolarr* ba)
-// {
-//     int cnt = 0;
-//     for (int i=0; i<(int)boolarr_size(ba); i++){
-//         if (ba->a[i] == '1'){
-//             cnt += 1;
-//         }
-//     }
-//     return cnt;
-// }
+/* Return number of bits that are set true */
+unsigned int boolarr_count1s(const boolarr* ba)
+{
+    int cnt = 0;
+    if(ba!=NULL){
+        int n_bytes = (boolarr_size(ba)/NBITS+1);
+        for (int i=0; i<n_bytes; i++){
+            for (int j=0; j<NBITS; j++){
+                if ((ba->a[i] && pow(BASE2, j)) > 0){
+                    cnt += 1;        
+                }
+            }
+        }
+    }
+    return cnt;
+}
 
-// /* Set nth bit on/off */
-// bool boolarr_set(boolarr* ba, const unsigned int n, const bool b){
-//     if(ba==NULL){
-//         return false;
-//     }
+/* Set nth bit on/off */
+bool boolarr_set(boolarr* ba, const unsigned int n, const bool b)
+{
+    if(ba==NULL){
+        return false;
+    }
 
-//     while (ba->capacity < (int)n+1){
-//         int length = boolarr_size(ba);
-//         int new_capacity = ba->capacity*SCALEFACTOR;
-//         ba->a = (boolarrtype*) nrecalloc(ba->a, ba->capacity, new_capacity);
-//         memset(ba->a+length, '0', new_capacity-length);
-//         ba->capacity = new_capacity;
-//     }
+    int n_bits = n + 1;
+    int n_bytes = (n_bits / NBITS + 1);
+    while (ba->capacity < n_bytes){
+        ba->a = (boolarrtype*) nrecalloc(ba->a, ba->capacity, ba->capacity*SCALEFACTOR*sizeof(boolarrtype));
+        ba->capacity = ba->capacity*SCALEFACTOR*sizeof(boolarrtype);
+    }
 
-//     if (b == true){
-//         ba->a[n] = '1';
-//     }
-//     else{
-//         ba->a[n] = '0';
-//     }
+    int bit_idx = _stridx2bitidx(n);
+    int byte_idx = _stridx2byteidx(n);
+    if (b == 1 && ((int) ba->a[byte_idx] & (int) pow(2, bit_idx)) == 0){
+        ba->a[byte_idx] += pow(2, bit_idx);
+    }
+    else if (b == 0 && ((int) ba->a[byte_idx] & (int) pow(2, bit_idx)) != 0){
+        ba->a[byte_idx] -= pow(2, bit_idx);
+    }
 
-//     // TODO
-//     if (boolarr_size(ba) < n+1){
-//         ba->size = n+1;
-//     }
+    if (boolarr_size(ba) < (n + 1)){
+        ba->n_bits = n + 1;
+    }
+    return true;
+}
 
-//     return true;
-// }
+/* Get nth bit */
+bool boolarr_get(const boolarr* ba, const unsigned int n, bool* b)
+{   
+    if (ba == NULL){
+        return false;
+    }
 
-// /* Get nth bit */
-// bool boolarr_get(const boolarr* ba, const unsigned int n, bool* b)
-// {   
-//     if (ba == NULL){
-//         return false;
-//     }
-//     if (ba->a[n] == '1'){
-//         *b = true;        
-//     }
-//     else{
-//         *b = false;
-//     }== '1'){
-//                 ba3->a[i] = '1';
-//             }
-//             else{
-//                 ba3->a[i] = '0';
-//             }
-//         }
-//         else if(l == or){
-//             if (ba1->a[i] == '1' || ba2->a[i] == '1'){
-//                 ba3->a[i] = '1';
-//             }
-//             else{
-//                 ba3->a[i] = '0';
-//             }
-//     return true;
-// }
+    int bit_idx = _stridx2bitidx(n);
+    int byte_idx = _stridx2byteidx(n);
+    *b = (int) ba->a[byte_idx] & (int) pow(BASE2, bit_idx);
+    return true;
+}
 
-// /* Return if two arrays are the same (bitwise) */
-// bool boolarr_issame(const boolarr* b1, const boolarr* b2)
-// {
-//     if (b1 == NULL && b2 == NULL){
-//         return true;
-//     }
-//     else if(b1 == NULL){
-//         return false;
-//     }
-//     else if(b2 == NULL){
-//         return false;
-//     }
+/* Return if two arrays are the same (bitwise) */
+bool boolarr_issame(const boolarr* b1, const boolarr* b2)
+{
+    if (b1 == NULL && b2 == NULL){
+        return true;
+    }
+    else if(b1 == NULL){
+        return false;
+    }
+    else if(b2 == NULL){
+        return false;
+    }
 
-//     if (boolarr_size(b1) != boolarr_size(b2)){
-//         return false;
-//     }
+    if (boolarr_size(b1) != boolarr_size(b2)){
+        return false;
+    }
 
-    
-//     if (memcmp(b1->a, b2->a, (int)boolarr_size(b1)) == 0){
-//         return true;
-//     }
-//     return false;
-// }
+    bool issame = true;
+    for (int i=0; i<(int) boolarr_size(b1)/NBITS+1; i++){
+        if (b1->a[i] != b2->a[i]){
+            issame = false;
+        }
+    }
+    return issame;
+}
 
-// /* Store to string - rightmost bit is LSB */
-// bool boolarr_tostring(const boolarr* ba, char* str)
-// {
-//     if (ba == NULL){
-//         return false;
-//     }
-//     if (str == NULL){
-//         return false;
-//     }
-//     memcpy(str, (char*) ba->a, (int)boolarr_size(ba));
-//     return true;
-// }
+/* Store to string - rightmost bit is LSB */
+bool boolarr_tostring(const boolarr* ba, char* str)
+{
+    if (ba == NULL){
+        return false;
+    }
+    if (str == NULL){
+        return false;
+    }
 
-// /* Print out array & meta info */
-// bool boolarr_print(const boolarr* ba)
-// {
-//     printf("size: %i\n", ba->size);
-//     printf("capacity: %i\n", ba->capacity);
-//     for (int i=0; i<(int)boolarr_size(ba); i++){
-//         printf("%c", ba->a[i]);
-//     }
-//     printf("\n");
-//     return true;
-// }
+    int n_bits = boolarr_size(ba);
+    int n_bytes = (n_bits / NBITS + 1);
+    // TODO: Conditional jump or move depends on uninitialised value(s)
+    char str_temp[BIGSTR];
+    memset(str_temp, '\0', BIGSTR);
+    for (int byteidx=0; byteidx<n_bytes; byteidx++){
+        for (int bitidx=0; bitidx<NBITS; bitidx++){
+            if (byteidx*NBITS+bitidx < n_bits){
+                int stridx = n_bits - 1 - _bitidx2stridx(byteidx, bitidx);
+                if (((int) ba->a[byteidx] & (int) pow(BASE2, bitidx)) != 0){
+                    // str[stridx] = '1';
+                    str_temp[stridx] = '1';
+                }
+                else{
+                    // str[stridx] = '0';
+                    str_temp[stridx] = '0';
+                }
+            }
+        }
+    }
 
-// /* Flip all bits */
-// bool boolarr_negate(boolarr* ba)
-// {
-//     for (int i=0; i<(int)boolarr_size(ba); i++){
-//         if (ba->a[i] == '1'){
-//             ba->a[i] = '0';
-//         }
-//         else{
-//             ba->a[i] = '1';
-//         }
-//     }
-//     return true;
-// }
+    strcpy(str, str_temp);
+    return true;
+}
 
-// /* Functions dealing with 2 bitwise-arrays */
-// /* Must be the same length */
-// boolarr* boolarr_bitwise(const boolarr* ba1, const boolarr* ba2, const logicalop l)
-// {
-//     if (boolarr_size(ba1) != boolarr_size(ba2)){
-//         fprintf(stderr, "boolarr_bitwise operation must be the same length.");
-//         exit(EXIT_FAILURE);
-//     }
-//     boolarr* ba3 = boolarr_clone(ba1);
+/* Print out array & meta info */
+bool boolarr_print(const boolarr* ba)
+{
+    int n_bits = boolarr_size(ba);
+    int n_bytes = (n_bits / NBITS + 1);
+    char str[BIGSTR];
+    memset(str, '\0', BIGSTR);
+    boolarr_tostring(ba, str);
+    printf("n_bits: %i\n", n_bits);
+    printf("n_bytes: %i\n", n_bytes);
+    printf("capacity: %i\n", ba->capacity);
+    printf("binary: %s\n", str);
+    return true;
+}
 
-//     for (int i=0; i<(int)boolarr_size(ba1); i++){
-//         if (l == and){
-//             if (ba1->a[i] == '1' && ba2->a[i] == '1'){
-//                 ba3->a[i] = '1';
-//             }
-//             else{
-//                 ba3->a[i] = '0';
-//             }
-//         }
-//         else if(l == or){
-//             if (ba1->a[i] == '1' || ba2->a[i] == '1'){
-//                 ba3->a[i] = '1';
-//             }
-//             else{
-//                 ba3->a[i] = '0';
-//             }
-//         }
-//         else if(l == xor){
-//             if (ba1->a[i] == '1' && ba2->a[i] == '0'){
-//                 ba3->a[i] = '1';
-//             }
-//             else if (ba1->a[i] == '0' && ba2->a[i] == '1'){
-//                 ba3->a[i] = '1';
-//             }
-//             else{
-//                 ba3->a[i] = '0';
-//             }
-//         }
-//     }
-//     return ba3;
-// }
+/* Flip all bits */
+bool boolarr_negate(boolarr* ba)
+{
+    int n_bits = boolarr_size(ba);
+    int n_bytes = (n_bits / NBITS + 1);
+    for (int byteidx=0; byteidx<n_bytes; byteidx++){
+        for (int bitidx=0; bitidx<NBITS; bitidx++){
+            if (byteidx*NBITS+bitidx < n_bits){
+                if (((int) ba->a[byteidx] & (int) pow(BASE2, bitidx)) != 0){
+                    ba->a[byteidx] -= pow(BASE2, bitidx);
+                }
+                else{
+                    ba->a[byteidx] += pow(BASE2, bitidx);
+                }
+            }
+        }
+    }
+    return true;
+}
 
-// /* Clears all space */
-// bool boolarr_free(boolarr* p)
-// {
-//     free(p->a);
-//     free(p);
-//     return true;
-// }
+/* Functions dealing with 2 bitwise-arrays */
+/* Must be the same length */
+boolarr* boolarr_bitwise(const boolarr* ba1, const boolarr* ba2, const logicalop l)
+{
+    if (boolarr_size(ba1) != boolarr_size(ba2)){
+        fprintf(stderr, "boolarr_bitwise operation must be the same length.");
+        exit(EXIT_FAILURE);
+    }
+    boolarr* ba3 = boolarr_clone(ba1);
+    for (int i=0; i<(int) boolarr_size(ba1)/NBITS+1; i++){
+        if (l == and){
+            ba3->a[i] = ba1->a[i] & ba2->a[i];
+        }
+        else if(l == or){
+            ba3->a[i] = ba1->a[i] | ba2->a[i];
+        }
+        else if(l == xor){
+            ba3->a[i] = (ba1->a[i] ^ ba2->a[i]);
+        }
+    }
+    return ba3;
+}
+
+/* Clears all space */
+bool boolarr_free(boolarr* p)
+{
+    free(p->a);
+    free(p);
+    return true;
+}
+
+
+
 

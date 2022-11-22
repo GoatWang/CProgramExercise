@@ -25,6 +25,6 @@ clean:
 
 run: all
 	./testrealloc_s
-	valgrind ./testrealloc_v
+	valgrind --track-origins=yes ./testrealloc_v
 #brew tap LouisBrunner/valgrind
 # brew install --HEAD LouisBrunner/valgrind/valgrind

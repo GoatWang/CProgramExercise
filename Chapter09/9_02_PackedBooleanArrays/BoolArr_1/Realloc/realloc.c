@@ -170,26 +170,21 @@ bool boolarr_tostring(const boolarr* ba, char* str)
 
     int n_bits = boolarr_size(ba);
     int n_bytes = (n_bits / NBITS + 1);
-    // TODO: Conditional jump or move depends on uninitialised value(s)
-    char str_temp[BIGSTR];
-    memset(str_temp, '\0', BIGSTR);
     for (int byteidx=0; byteidx<n_bytes; byteidx++){
         for (int bitidx=0; bitidx<NBITS; bitidx++){
             if (byteidx*NBITS+bitidx < n_bits){
                 int stridx = n_bits - 1 - _bitidx2stridx(byteidx, bitidx);
                 if (((int) ba->a[byteidx] & (int) pow(BASE2, bitidx)) != 0){
-                    // str[stridx] = '1';
-                    str_temp[stridx] = '1';
+                    str[stridx] = '1';
                 }
                 else{
-                    // str[stridx] = '0';
-                    str_temp[stridx] = '0';
+                    str[stridx] = '0';
                 }
             }
         }
     }
 
-    strcpy(str, str_temp);
+    str[n_bits] = '\0';
     return true;
 }
 

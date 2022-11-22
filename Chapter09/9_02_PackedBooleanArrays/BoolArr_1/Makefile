@@ -1,11 +1,11 @@
-CC=gcc
+CC=clang
 GENPATH=../../ADTs/General
 COMMON= -Wall -Wextra -Wfloat-equal -Wvla -Wpedantic -std=c99 -Werror
 DEBUG= -g3
 SANITIZE= $(COMMON) -fsanitize=undefined -fsanitize=address $(DEBUG)
 VALGRIND= $(COMMON) $(DEBUG)
 PRODUCTION= $(COMMON) -O3
-LDLIBS =
+LDLIBS = -lm
 
 all: testrealloc_s testrealloc_v testrealloc
 
